@@ -11,7 +11,7 @@
 
 **基于 Gemini 引擎的下一代浏览器智能增强助手**
 
-[功能特性](#-核心功能) • [技术栈](#-技术架构) • [安装指南](#-安装步骤) • [快捷键](#-默认快捷键)
+[功能特性](#-核心功能) • [安装指南](#-安装步骤) • [快捷键](#-默认快捷键) • [技术架构](#-技术架构)
 
 </div>
 
@@ -25,18 +25,36 @@
 *   **富文本渲染**：完美支持 **Markdown** 表格、代码高亮以及 **LaTeX 数学公式**（KaTeX 驱动）。
 
 ### 2. ⚡ 浮动工具栏 (Quick Actions)
-*   **划词即用**：在网页上选中文字，立即弹出工具栏。
-*   **一键处理**：内置“翻译”、“解释”、“总结”快捷指令。
-*   **自由提问**：直接在网页浮窗中提问，结果实时流式输出。
+*   **划词即用**：在网页上选中文字，立即弹出工具栏，支持“翻译”、“解释”、“总结”。
+*   **自由提问**：直接在网页浮窗中提问，结果实时流式输出，无需切换窗口。
 
 ### 3. 📄 网页环境感知 (Page Context)
-*   **对话网页**：开启后 Gemini 可读取当前页面文本，帮你总结长文或分析代码。
+*   **对话网页**：开启后 Gemini 可读取当前页面文本，帮你总结长文、分析代码或从网页找答案。
 *   **快速引用**：支持一键引用网页选中文本到对话框。
 
 ### 4. 🖼️ 视觉与图像处理 (Visual Intelligence)
 *   **OCR 提取**：截图并自动提取图片中的文字。
-*   **图像分析**：支持拖拽、粘贴图片给 AI 进行深度解析。
+*   **图像分析**：支持将网页图片拖拽、粘贴给 AI 进行深度解析。
 *   **区域截图**：支持选取特定区域（Snip）进行精准提问。
+
+---
+
+## 🚀 安装步骤
+
+无需复杂的开发环境，只需简单几步即可完成安装：
+
+1.  **下载安装包**：
+    前往 [Gemini Nexus Releases](https://github.com/yeahhe365/gemini-nexus/releases) 下载最新的 `gemini-nexus.zip` 文件。
+2.  **解压文件**：
+    将下载的 `.zip` 包解压到你电脑上的任意固定位置（例如“文档”文件夹）。
+3.  **打开扩展程序页面**：
+    在 Chrome 浏览器地址栏输入 `chrome://extensions/` 并回车。
+4.  **开启开发者模式**：
+    在页面右上角找到 **“开发者模式” (Developer mode)** 开关并打开。
+5.  **加载插件**：
+    点击左上角的 **“加载已解压的扩展程序” (Load unpacked)** 按钮，选择刚才解压出来的文件夹。
+6.  **开始使用**：
+    建议点击浏览器右上角的“拼图”图标，将 **Gemini Nexus** 固定到工具栏。
 
 ---
 
@@ -51,37 +69,14 @@
 | **Chrome Extension MV3** | 采用最新的浏览器扩展标准，安全且性能卓越 |
 | **Sandbox Architecture** | UI 渲染运行在隔离沙盒，确保主程序安全 |
 
-### 前端开发
+### 开发工具
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat-square&logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat-square&logo=vite&logoColor=white) ![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=flat-square&logo=css3&logoColor=white)
 
-### 渲染与工具库
-![Markdown](https://img.shields.io/badge/markdown-%23000000.svg?style=flat-square&logo=markdown&logoColor=white)
-- **Marked.js**: 高速 Markdown 解析。
-- **KaTeX**: 毫秒级的数学公式渲染。
-- **Highlight.js**: 自动识别并高亮 100+ 种编程语言。
-- **Fuse.js**: 轻量级模糊搜索引擎，用于历史记录检索。
-
----
-
-## 🚀 安装步骤
-
-1.  **克隆仓库**：
-    ```bash
-    git clone https://github.com/your-username/gemini-nexus.git
-    cd gemini-nexus
-    ```
-2.  **安装依赖**：
-    ```bash
-    npm install
-    ```
-3.  **构建项目**：
-    ```bash
-    npm run build
-    ```
-4.  **加载扩展**：
-    *   打开 Chrome 访问 `chrome://extensions/`。
-    *   开启 **“开发者模式”**。
-    *   点击 **“加载已解压的扩展程序”**，选择 `dist` 文件夹或项目根目录。
+### 渲染库
+- **Marked.js**: Markdown 解析。
+- **KaTeX**: 数学公式渲染。
+- **Highlight.js**: 代码语法高亮。
+- **Fuse.js**: 历史记录模糊搜索。
 
 ---
 
@@ -93,7 +88,7 @@
 | **打开侧边栏** | `Ctrl + P` |
 | **打开/关闭扩展** | `Ctrl + Shift + P` |
 
-> *可以在扩展的“设置”面板中自定义这些快捷键。*
+> *注：您可以在扩展程序的“设置”面板或 `chrome://extensions/shortcuts` 中自定义这些快捷键。*
 
 ---
 
