@@ -18,3 +18,25 @@ export function saveSessionsToStorage(sessions) {
 export function requestSessionsFromStorage() {
     window.parent.postMessage({ action: 'GET_SESSIONS' }, '*');
 }
+
+export function requestShortcutsFromStorage() {
+    window.parent.postMessage({ action: 'GET_SHORTCUTS' }, '*');
+}
+
+export function saveShortcutsToStorage(shortcuts) {
+    window.parent.postMessage({
+        action: 'SAVE_SHORTCUTS',
+        payload: shortcuts
+    }, '*');
+}
+
+export function requestThemeFromStorage() {
+    window.parent.postMessage({ action: 'GET_THEME' }, '*');
+}
+
+export function saveThemeToStorage(theme) {
+    window.parent.postMessage({
+        action: 'SAVE_THEME',
+        payload: theme
+    }, '*');
+}

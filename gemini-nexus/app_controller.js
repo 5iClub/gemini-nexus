@@ -11,6 +11,8 @@ export class AppController {
         this.imageManager = imageManager;
         this.captureMode = 'snip'; // 'ocr' or 'snip'
         this.isGenerating = false; // Track generation state
+        
+        this.pageContextActive = false; // New state for Page Context
 
         // Initialize Message Handler
         this.messageHandler = new MessageHandler(
@@ -23,6 +25,16 @@ export class AppController {
 
     setCaptureMode(mode) {
         this.captureMode = mode;
+    }
+    
+    togglePageContext() {
+        this.pageContextActive = !this.pageContextActive;
+        this.ui.chat.togglePageContext(this.pageContextActive);
+        
+        if (this.pageContextActive) {
+            this.ui.updateStatus("Chat will include page content");
+            setTimeout(() => { if(!this.isGenerating) this.ui.updateStatus(""); }, 2000);
+        }
     }
 
     handleNewChat() {
@@ -158,7 +170,8 @@ export class AppController {
             image: msgImage,
             imageType: msgImageType,
             imageName: msgImageName,
-            model: "3-flash"
+            model: "3-flash",
+            includePageContext: this.pageContextActive // Pass flag to background
         });
     }
 

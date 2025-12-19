@@ -2,10 +2,11 @@
 // content_toolbar_ui.js
 
 (function() {
-    // Import dependencies from global window scope
+    // Dependencies
     const Templates = window.GeminiToolbarTemplates;
     const View = window.GeminiToolbarView;
     const DragController = window.GeminiDragController;
+    const Events = window.GeminiToolbarEvents;
 
     /**
      * Main UI Controller
@@ -16,10 +17,10 @@
             this.shadow = null;
             this.view = null;
             this.dragController = null;
+            this.events = null;
             this.callbacks = {};
             this.isBuilt = false;
             this.currentResultText = '';
-            this.resizeObserver = null;
         }
 
         setCallbacks(callbacks) {
@@ -31,10 +32,14 @@
             this._createHost();
             this._render();
             
-            // Initialize View
+            // Initialize Sub-components
             this.view = new View(this.shadow);
+            this.dragController = new DragController(this.view.elements.askWindow, this.view.elements.askHeader);
+            this.events = new Events(this);
             
-            this._bindEvents();
+            // Bind Events
+            this.events.bind(this.view.elements, this.view.elements.askWindow);
+            
             this.isBuilt = true;
         }
 
@@ -55,111 +60,38 @@
             this.shadow.appendChild(container);
         }
 
-        _bindEvents() {
-            const { buttons, imageBtn, askInput, askWindow, askHeader } = this.view.elements;
-            
-            // Toolbar Actions
-            buttons.ask.addEventListener('mousedown', (e) => this._trigger(e, 'ask'));
-            buttons.translate.addEventListener('mousedown', (e) => this._trigger(e, 'translate'));
-            buttons.explain.addEventListener('mousedown', (e) => this._trigger(e, 'explain'));
+        // --- Event Handlers (Called by ToolbarEvents) ---
 
-            // Image Button
-            imageBtn.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                this._fireCallback('image_analyze');
-            });
-            imageBtn.addEventListener('mouseover', () => this._fireCallback('imageBtnHover', true));
-            imageBtn.addEventListener('mouseout', () => this._fireCallback('imageBtnHover', false));
-
-            // Window Actions
-            buttons.headerClose.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                this._fireCallback('cancel_ask');
-            });
-
-            buttons.stop.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                this._fireCallback('cancel_ask'); 
-            });
-
-            // Continue Chat Button
-            if (buttons.continue) {
-                buttons.continue.addEventListener('click', (e) => {
-                    e.preventDefault(); e.stopPropagation();
-                    this._fireCallback('continue_chat');
-                });
-            }
-
-            // Copy Button
-            if (buttons.copy) {
-                buttons.copy.addEventListener('click', (e) => {
-                    e.preventDefault(); e.stopPropagation();
-                    this._handleCopy();
-                });
-            }
-
-            // Input Enter Key
-            askInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this._handleSubmit(e);
-                }
-                e.stopPropagation();
-            });
-
-            // Prevent event bubbling from window (e.g. text selection on page)
-            askWindow.addEventListener('mousedown', (e) => e.stopPropagation());
-
-            // Draggable
-            this.dragController = new DragController(askWindow, askHeader);
-
-            // Resizable Memory: Watch for size changes
-            this.resizeObserver = new ResizeObserver(entries => {
-                for (let entry of entries) {
-                    // Only save if the window is currently visible to avoid saving collapsed states
-                    if (this.view && this.view.isWindowVisible()) {
-                        let width, height;
-                        if (entry.borderBoxSize && entry.borderBoxSize.length > 0) {
-                            width = entry.borderBoxSize[0].inlineSize;
-                            height = entry.borderBoxSize[0].blockSize;
-                        } else {
-                            width = entry.contentRect.width;
-                            height = entry.contentRect.height;
-                        }
-                        
-                        if (width > 50 && height > 50) {
-                            this._saveDimensions(width, height);
-                        }
-                    }
-                }
-            });
-            this.resizeObserver.observe(askWindow);
-        }
-
-        _saveDimensions(w, h) {
-            chrome.storage.local.set({ 'gemini_nexus_window_size': { w, h } });
-        }
-
-        _trigger(e, action) {
+        triggerAction(e, action) {
             e.preventDefault(); e.stopPropagation();
-            this._fireCallback(action);
+            this._fireCallback('onAction', action);
         }
 
-        _fireCallback(name, ...args) {
-            if (name === 'imageBtnHover' && this.callbacks.onImageBtnHover) {
-                this.callbacks.onImageBtnHover(...args);
-            } else if (this.callbacks.onAction) {
-                this.callbacks.onAction(name, ...args);
-            }
+        handleImageClick() {
+            this._fireCallback('onAction', 'image_analyze');
         }
 
-        _handleSubmit(e) {
+        handleImageHover(isHovering) {
+            this._fireCallback('onImageBtnHover', isHovering);
+        }
+
+        cancelAsk(e) {
             e.preventDefault(); e.stopPropagation();
+            this._fireCallback('onAction', 'cancel_ask');
+        }
+
+        continueChat(e) {
+            e.preventDefault(); e.stopPropagation();
+            this._fireCallback('onAction', 'continue_chat');
+        }
+
+        submitAsk(e) {
             const text = this.view.elements.askInput.value.trim();
-            if (text) this._fireCallback('submit_ask', text);
+            if (text) this._fireCallback('onAction', 'submit_ask', text);
         }
-        
-        async _handleCopy() {
+
+        async copyResult(e) {
+            e.preventDefault(); e.stopPropagation();
             if (!this.currentResultText) return;
             try {
                 await navigator.clipboard.writeText(this.currentResultText);
@@ -171,10 +103,22 @@
             }
         }
 
-        // --- Public API Delegates ---
+        saveWindowDimensions(w, h) {
+            chrome.storage.local.set({ 'gemini_nexus_window_size': { w, h } });
+        }
 
-        show(rect) {
-            this.view.showToolbar(rect);
+        _fireCallback(type, ...args) {
+            if (type === 'onImageBtnHover' && this.callbacks.onImageBtnHover) {
+                this.callbacks.onImageBtnHover(...args);
+            } else if (this.callbacks.onAction) {
+                this.callbacks.onAction(...args);
+            }
+        }
+
+        // --- Public API ---
+
+        show(rect, mousePoint) {
+            this.view.showToolbar(rect, mousePoint);
         }
 
         hide() {
@@ -189,17 +133,17 @@
             this.view.hideImageButton();
         }
 
-        showAskWindow(rect, contextText) {
-            this.view.showAskWindow(rect, contextText, () => this.dragController.reset());
+        showAskWindow(rect, contextText, title = "询问") {
+            this.view.showAskWindow(rect, contextText, title, () => this.dragController.reset());
         }
 
         showLoading(msg) {
             this.view.showLoading(msg);
         }
 
-        showResult(text, title) {
-            this.currentResultText = text; // Store for copying
-            this.view.showResult(text, title);
+        showResult(text, title, isStreaming) {
+            this.currentResultText = text;
+            this.view.showResult(text, title, isStreaming);
         }
 
         showError(text) {

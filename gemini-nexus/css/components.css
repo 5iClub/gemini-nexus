@@ -1,10 +1,11 @@
 
+
 .icon-btn {
-    background: rgba(255, 255, 255, 0.85); /* Semi-transparent background */
-    backdrop-filter: blur(8px); /* Glass effect */
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: var(--icon-btn-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--icon-btn-border);
     cursor: pointer;
-    color: #444746;
+    color: var(--text-secondary);
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -14,7 +15,7 @@
     transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
     padding: 0;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    pointer-events: auto; /* Re-enable pointer events for buttons */
+    pointer-events: auto;
 }
 
 .icon-btn.small {
@@ -24,11 +25,11 @@
 }
 
 .icon-btn:hover { 
-    background: rgba(255, 255, 255, 0.95); 
+    background: var(--icon-btn-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-    border-color: rgba(255, 255, 255, 0.8);
-    color: #1f1f1f;
+    border-color: var(--icon-btn-border);
+    color: var(--text-primary);
 }
 
 .icon-btn:active {
@@ -106,7 +107,7 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--bg-overlay);
     backdrop-filter: blur(2px);
     justify-content: center;
     align-items: center;
@@ -120,13 +121,13 @@
 }
 
 .settings-content {
-    background: #fff;
-    width: 400px;
+    background: var(--bg-modal);
+    width: 420px;
     max-width: 90%;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
     transform: translateY(10px);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s;
     display: flex;
     flex-direction: column;
 }
@@ -137,7 +138,7 @@
 
 .settings-header {
     padding: 16px 20px;
-    border-bottom: 1px solid #e1e3e1;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -146,7 +147,7 @@
 .settings-header h3 {
     margin: 0;
     font-size: 18px;
-    color: #1f1f1f;
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -162,7 +163,7 @@
 .setting-group h4 {
     margin: 0 0 10px 0;
     font-size: 14px;
-    color: #0b57d0;
+    color: var(--primary);
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -171,39 +172,109 @@
 .setting-info {
     margin: 0 0 4px 0;
     font-size: 15px;
-    color: #1f1f1f;
+    color: var(--text-primary);
 }
 .setting-desc {
     margin: 0;
     font-size: 13px;
-    color: #5e5e5e;
+    color: var(--text-tertiary);
 }
 
-.shortcut-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/* GitHub Link Styles */
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    transition: color 0.2s;
+}
+.github-link:hover {
+    color: var(--primary);
+}
+.star-badge {
+    background: var(--bg-sidebar);
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    display: none;
 }
 
-.shortcut-list li {
+/* Shortcut UI */
+.shortcut-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+}
+.shortcut-row label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+.shortcut-input {
+    width: 140px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
     font-size: 13px;
-    color: #444746;
+    text-align: center;
+    color: var(--text-primary);
+    outline: none;
+    background: var(--bg-input);
+    cursor: pointer;
+    font-family: monospace;
+    transition: all 0.2s;
+}
+.shortcut-input:focus {
+    border-color: var(--primary);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 2px rgba(11, 87, 208, 0.1);
+}
+.shortcut-static {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-style: italic;
 }
 
-.shortcut-list li:last-child { margin-bottom: 0; }
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
 
-kbd {
-    background-color: #f1f3f4;
-    border: 1px solid #e1e3e1;
-    border-radius: 4px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-    color: #444746;
-    font-size: 11px;
-    padding: 2px 6px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+.btn-primary, .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 13px;
     font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+.btn-primary:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+    background: var(--bg-sidebar);
+    border-color: var(--primary);
 }

@@ -139,11 +139,20 @@ export function appendMessage(container, text, role, imageUrl = null) {
     return {
         div,
         update: (newText) => {
+            // Check if user is near bottom before update
+            const threshold = 50; 
+            const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            const isAtBottom = distanceToBottom <= threshold;
+
             currentText = newText;
             if (contentDiv) {
                 renderContent(contentDiv, currentText, role);
             }
-            container.scrollTop = container.scrollHeight;
+            
+            // Smart scroll: Only scroll to bottom if user was already at bottom
+            if (isAtBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
         }
     };
 }

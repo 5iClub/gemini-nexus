@@ -1,4 +1,5 @@
 
+
 // content_toolbar_styles_panel.js
 (function() {
     window.GeminiStylesPanel = `
@@ -9,7 +10,7 @@
             border: 1px solid #e1e3e1;
             border-radius: 12px;
             width: 400px;
-            height: auto;
+            height: 400px;
             min-width: 300px;
             min-height: 200px;
             
@@ -93,6 +94,7 @@
         /* Input Styles */
         .input-container {
             margin-bottom: 12px;
+            margin-top: 4px; /* Added spacing to prevent focus ring clipping */
             flex-shrink: 0;
         }
         
@@ -134,6 +136,26 @@
             font-weight: 600;
             margin-right: 6px;
             color: #0b57d0;
+        }
+
+        /* Mobile Layout - Bottom Sheet Style */
+        @media (max-width: 600px) {
+            .ask-window {
+                width: 96vw !important;
+                height: 60vh !important;
+                left: 2vw !important;
+                right: 2vw !important;
+                top: auto !important;
+                bottom: 12px !important;
+                border-radius: 16px;
+                transform: none !important;
+                max-width: none !important;
+                max-height: none !important;
+                resize: none !important;
+            }
+            .ask-header {
+                cursor: default; /* Indicate not draggable */
+            }
         }
     `;
 })();

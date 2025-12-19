@@ -12,7 +12,10 @@ window.addEventListener('message', (event) => {
     
     // Check if it's a message intended for the background script
     if (action === 'FORWARD_TO_BACKGROUND') {
-        chrome.runtime.sendMessage(payload);
+        chrome.runtime.sendMessage(payload).catch(e => {
+            // Suppress errors if background doesn't respond (channel closed)
+            // console.debug("Background msg error", e);
+        });
     }
     
     // --- Session Management (Full History) ---
@@ -42,6 +45,38 @@ window.addEventListener('message', (event) => {
                     // Consume it
                     chrome.storage.local.remove('pendingSessionId');
                 }
+            }
+        });
+    }
+
+    // --- Shortcut Management ---
+    if (action === 'SAVE_SHORTCUTS') {
+        chrome.storage.local.set({ geminiShortcuts: payload });
+    }
+
+    if (action === 'GET_SHORTCUTS') {
+        chrome.storage.local.get(['geminiShortcuts'], (result) => {
+            if (iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    action: 'RESTORE_SHORTCUTS',
+                    payload: result.geminiShortcuts || null
+                }, '*');
+            }
+        });
+    }
+
+    // --- Theme Management ---
+    if (action === 'SAVE_THEME') {
+        chrome.storage.local.set({ geminiTheme: payload });
+    }
+
+    if (action === 'GET_THEME') {
+        chrome.storage.local.get(['geminiTheme'], (result) => {
+            if (iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    action: 'RESTORE_THEME',
+                    payload: result.geminiTheme || 'light'
+                }, '*');
             }
         });
     }

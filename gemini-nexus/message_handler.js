@@ -43,6 +43,12 @@ export class MessageHandler {
             this.ui.updateStatus(request.mode === 'ocr' ? "Select area for OCR..." : "Select area to capture...");
             return;
         }
+
+        // 5. Quote Selection Result
+        if (request.action === "SELECTION_RESULT") {
+            this.handleSelectionResult(request);
+            return;
+        }
     }
 
     handleStreamUpdate(request) {
@@ -91,7 +97,9 @@ export class MessageHandler {
                 appendMessage(this.ui.historyDiv, request.text, 'ai');
             }
             
-            this.ui.scrollToBottom();
+            // Note: Removed unconditional scrollToBottom to respect user scroll position during streaming.
+            // appendMessage handles initial scroll for new messages.
+            // streamingBubble.update handles sticky scroll if user is at bottom.
         }
     }
 
@@ -126,6 +134,21 @@ export class MessageHandler {
         }
     }
     
+    handleSelectionResult(request) {
+        if (request.text && request.text.trim()) {
+             const quote = `> ${request.text.trim()}\n\n`;
+             const input = this.ui.inputFn;
+             // Append to new line if text exists
+             input.value = input.value ? input.value + "\n\n" + quote : quote;
+             input.focus();
+             // Trigger resize
+             input.dispatchEvent(new Event('input'));
+        } else {
+             this.ui.updateStatus("No text selected on page.");
+             setTimeout(() => this.ui.updateStatus(""), 2000);
+        }
+    }
+
     // Called by AppController on cancel/switch
     resetStream() {
         if (this.streamingBubble) {

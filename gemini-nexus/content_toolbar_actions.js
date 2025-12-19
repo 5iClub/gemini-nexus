@@ -10,7 +10,7 @@ class ToolbarActions {
 
     handleImageAnalyze(imgUrl, rect) {
         // Open window in Loading state
-        this.ui.showAskWindow(rect, "Analyzing image...");
+        this.ui.showAskWindow(rect, "Analyzing image...", "图片分析");
         this.ui.showLoading("Analyzing image content...");
         this.ui.setAskInputValue("Describe this image");
 
@@ -25,13 +25,11 @@ class ToolbarActions {
 
     handleQuickAction(actionType, selection, rect) {
         const prompt = this.getPrompt(actionType, selection);
-        const title = actionType === 'translate' ? 'Translation' : 'Explanation';
+        const title = actionType === 'translate' ? '翻译' : '解释';
         
         // Show the window in loading state immediately
         this.ui.hide();
-        this.ui.showAskWindow(rect, selection);
-        // Set title immediately so user knows context
-        this.ui.showResult("", title); 
+        this.ui.showAskWindow(rect, selection, title);
         this.ui.showLoading(actionType === 'translate' ? 'Translating...' : 'Explaining...');
         
         // Pre-fill input to indicate what's happening

@@ -1,7 +1,8 @@
+
 {
   "manifest_version": 3,
   "name": "Gemini Nexus",
-  "version": "6.0",
+  "version": "1.1.0",
   "permissions": ["sidePanel", "storage", "contextMenus"],
   "host_permissions": [
     "https://gemini.google.com/*",
@@ -49,6 +50,9 @@
         "content_toolbar_styles_panel.js",
         "content_toolbar_styles_markdown.js",
         "content_toolbar_styles.js",
+        "content_toolbar_markdown_utils.js",
+        "content_toolbar_markdown_highlight.js",
+        "content_toolbar_markdown_parser.js",
         "content_toolbar_markdown.js",
         "content_toolbar_drag.js",
         "content_toolbar_templates.js",
@@ -56,8 +60,11 @@
         "content_toolbar_view_widget.js",
         "content_toolbar_view_window.js",
         "content_toolbar_view.js",
+        "content_toolbar_ui_events.js",
         "content_toolbar_ui.js", 
-        "content_toolbar_actions.js", 
+        "content_toolbar_actions.js",
+        "content_toolbar_image.js",
+        "content_toolbar_stream.js", 
         "content_toolbar.js", 
         "content.js"
       ],

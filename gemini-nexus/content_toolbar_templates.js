@@ -1,4 +1,5 @@
 
+
 // content_toolbar_templates.js
 (function() {
     const ICONS = window.GeminiToolbarIcons;
@@ -45,6 +46,7 @@
                         <div class="markdown-body" id="result-text"></div>
                         <div class="spinner-container hidden" id="loading-spinner">
                              <div class="spinner"></div>
+                             <span id="loading-text" class="loading-text"></span>
                         </div>
                     </div>
 

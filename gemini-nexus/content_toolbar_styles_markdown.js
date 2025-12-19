@@ -1,4 +1,5 @@
 
+
 // content_toolbar_styles_markdown.js
 (function() {
     window.GeminiStylesMarkdown = `
@@ -71,6 +72,15 @@
             display: block;
         }
 
+        /* Syntax Highlighting */
+        .token-comment { color: #6a737d; font-style: italic; }
+        .token-tag { color: #22863a; }
+        .token-attr { color: #6f42c1; }
+        .token-string { color: #032f62; }
+        .token-keyword { color: #d73a49; }
+        .token-number { color: #005cc5; }
+        .token-doctag { color: #d73a49; font-weight: bold; }
+
         /* Tables */
         .markdown-body table {
             border-collapse: collapse;
@@ -128,6 +138,7 @@
         .spinner-container {
             display: flex;
             justify-content: center;
+            align-items: center;
             padding: 20px;
         }
         .spinner-container.hidden { display: none; }
@@ -141,6 +152,13 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-text {
+            margin-left: 10px;
+            color: #8e918f;
+            font-size: 13px;
+            font-weight: 500;
+        }
 
         /* Floating Footer */
         .footer-overlay {

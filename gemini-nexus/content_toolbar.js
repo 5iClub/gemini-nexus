@@ -5,26 +5,28 @@ class FloatingToolbar {
     constructor() {
         // Dependencies
         this.ui = new window.GeminiToolbarUI();
-        
-        // Initialize Actions with UI dependency
         this.actions = new window.GeminiToolbarActions(this.ui);
         
+        // Sub-Modules
+        this.imageDetector = new window.GeminiImageDetector({
+            onShow: (rect) => this.ui.showImageButton(rect),
+            onHide: () => this.ui.hideImageButton()
+        });
+
+        this.streamHandler = new window.GeminiStreamHandler(this.ui, {
+            onSessionId: (id) => { this.lastSessionId = id; }
+        });
+
         // State
         this.visible = false;
         this.currentSelection = "";
         this.lastRect = null;
         this.lastSessionId = null;
         
-        // Image Hover State
-        this.hoveredImage = null;
-        this.imageButtonTimeout = null;
-
         // Bind methods
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.handleAction = this.handleAction.bind(this);
-        this.onImageHover = this.onImageHover.bind(this);
-        this.handleStreamMessage = this.handleStreamMessage.bind(this);
         
         this.init();
     }
@@ -36,14 +38,16 @@ class FloatingToolbar {
             onAction: this.handleAction,
             onImageBtnHover: (isHovering) => {
                 if (isHovering) {
-                    // Clear any hide timeout if mouse enters the button
-                    if (this.imageButtonTimeout) clearTimeout(this.imageButtonTimeout);
+                    this.imageDetector.cancelHide();
                 } else {
-                    // Resume hide logic if mouse leaves button (and not back on image)
-                    this.scheduleHideImageButton();
+                    this.imageDetector.scheduleHide();
                 }
             }
         });
+
+        // Initialize Modules
+        this.imageDetector.init();
+        this.streamHandler.init();
 
         this.attachListeners();
     }
@@ -51,76 +55,16 @@ class FloatingToolbar {
     attachListeners() {
         document.addEventListener('mouseup', this.onMouseUp);
         document.addEventListener('mousedown', this.onMouseDown);
-        
-        // Delegated Image Hover
-        document.addEventListener('mouseover', (e) => this.onImageHover(e, true), true);
-        document.addEventListener('mouseout', (e) => this.onImageHover(e, false), true);
-
-        // Listen for Streaming Updates from Background
-        chrome.runtime.onMessage.addListener(this.handleStreamMessage);
-    }
-
-    handleStreamMessage(request, sender, sendResponse) {
-        if (request.action === "GEMINI_STREAM_UPDATE") {
-            if (this.ui.isVisible()) {
-                // Update result in real-time
-                // We don't change the title during stream, just text
-                this.ui.showResult(request.text, null);
-            }
-        }
-        
-        if (request.action === "GEMINI_STREAM_DONE") {
-            const result = request.result;
-            
-            if (request.sessionId) {
-                this.lastSessionId = request.sessionId;
-            }
-
-            if (this.ui.isVisible()) {
-                if (result && result.status === 'success') {
-                    this.ui.showResult(result.text, null);
-                } else if (result && result.status === 'error') {
-                    this.ui.showError(result.text);
-                } else if (!result) {
-                    // Cancelled or empty
-                    // Do nothing or show cancelled state
-                }
-            }
-        }
-    }
-
-    onImageHover(e, isEnter) {
-        if (e.target.tagName !== 'IMG') return;
-
-        // Ignore small images (icons, spacers)
-        const img = e.target;
-        if (img.width < 100 || img.height < 100) return;
-
-        if (isEnter) {
-            if (this.imageButtonTimeout) clearTimeout(this.imageButtonTimeout);
-            this.hoveredImage = img;
-            const rect = img.getBoundingClientRect();
-            this.ui.showImageButton(rect);
-        } else {
-            // Mouse leave
-            this.scheduleHideImageButton();
-        }
-    }
-
-    scheduleHideImageButton() {
-        if (this.imageButtonTimeout) clearTimeout(this.imageButtonTimeout);
-        this.imageButtonTimeout = setTimeout(() => {
-            this.ui.hideImageButton();
-            this.hoveredImage = null;
-        }, 200); // 200ms delay to allow moving to button
     }
 
     handleAction(actionType, data) {
         // --- Image Analysis ---
         if (actionType === 'image_analyze') {
-            if (!this.hoveredImage) return;
-            const imgUrl = this.hoveredImage.src;
-            const rect = this.hoveredImage.getBoundingClientRect();
+            const img = this.imageDetector.getCurrentImage();
+            if (!img) return;
+            
+            const imgUrl = img.src;
+            const rect = img.getBoundingClientRect();
 
             this.ui.hideImageButton();
             this.actions.handleImageAnalyze(imgUrl, rect);
@@ -131,7 +75,7 @@ class FloatingToolbar {
         if (actionType === 'ask') {
             if (this.currentSelection) {
                 this.ui.hide(); // Hide small toolbar
-                this.ui.showAskWindow(this.lastRect, this.currentSelection);
+                this.ui.showAskWindow(this.lastRect, this.currentSelection, "询问");
             }
             return;
         }
@@ -187,6 +131,10 @@ class FloatingToolbar {
     }
 
     onMouseUp(e) {
+        // Capture coordinates immediately
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
         // Delay slightly to let selection finalize
         setTimeout(() => {
             const selection = window.getSelection();
@@ -196,7 +144,9 @@ class FloatingToolbar {
                 this.currentSelection = text;
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                this.show(rect);
+                
+                // Pass mouse coordinates
+                this.show(rect, { x: mouseX, y: mouseY });
             } else {
                 // Only hide if we aren't currently interacting with the Ask Window
                 if (!this.ui.isWindowVisible()) {
@@ -207,9 +157,9 @@ class FloatingToolbar {
         }, 10);
     }
 
-    show(rect) {
+    show(rect, mousePoint) {
         this.lastRect = rect;
-        this.ui.show(rect);
+        this.ui.show(rect, mousePoint);
         this.visible = true;
     }
 
@@ -227,7 +177,6 @@ class FloatingToolbar {
         const height = 100;
         
         // Create a virtual rect roughly in the center-top area
-        // The window positioning logic prefers to place the window below the target rect.
         const left = (viewportW - width) / 2;
         const top = (viewportH / 2) - 200; 
         
@@ -243,11 +192,10 @@ class FloatingToolbar {
         this.ui.hide(); // Hide small selection toolbar
         
         // Show window with no context
-        this.ui.showAskWindow(rect, null);
+        this.ui.showAskWindow(rect, null, "询问");
         
         // Reset state for new question
         this.ui.setAskInputValue("");
-        this.ui.showResult("", "Quick Ask");
         this.currentSelection = ""; // Ensure context is clear for submission
     }
 }

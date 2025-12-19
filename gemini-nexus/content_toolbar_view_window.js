@@ -1,4 +1,5 @@
 
+
 // content_toolbar_view_window.js
 (function() {
     const Utils = window.GeminiViewUtils;
@@ -19,7 +20,7 @@
             return this.isPinned;
         }
 
-        async show(rect, contextText, resetDrag = null) {
+        async show(rect, contextText, title, resetDrag = null) {
             if (!this.elements.askWindow) return;
 
             // Load and apply saved dimensions
@@ -49,7 +50,7 @@
             }
             
             // Reset Content
-            this.elements.windowTitle.textContent = "Gemini Nexus";
+            this.elements.windowTitle.textContent = title || "询问";
             if (contextText) {
                 this.elements.contextPreview.textContent = contextText;
                 this.elements.contextPreview.classList.remove('hidden');
@@ -78,6 +79,12 @@
             this.elements.resultText.innerHTML = ''; // Clear previous
             this.elements.loadingSpinner.classList.remove('hidden');
             
+            // Show Status Text
+            if (this.elements.loadingText) {
+                this.elements.loadingText.textContent = msg;
+                this.elements.loadingText.style.display = 'block';
+            }
+            
             // Show Footer with Stop button, hide Continue
             this.elements.footerOverlay.classList.remove('hidden');
             if (this.elements.buttons.stop) this.elements.buttons.stop.classList.remove('hidden');
@@ -86,33 +93,59 @@
             if (this.elements.buttons.copy) this.elements.buttons.copy.classList.add('hidden');
         }
 
-        showResult(text, title) {
+        showResult(text, title, isStreaming = false) {
             if (!this.elements.askWindow) return;
             
             if (title) this.elements.windowTitle.textContent = title;
             
-            this.elements.loadingSpinner.classList.add('hidden');
+            // Smart Scroll Logic
+            const resultArea = this.elements.resultArea;
+            let shouldScrollBottom = false;
+            if (resultArea) {
+                const threshold = 50;
+                const distanceToBottom = resultArea.scrollHeight - resultArea.scrollTop - resultArea.clientHeight;
+                shouldScrollBottom = distanceToBottom <= threshold;
+            }
             
             this.elements.resultText.innerHTML = MarkdownRenderer.render(text);
             
-            if (text) {
-                 // Show Footer with Continue button, hide Stop
-                 this.elements.footerOverlay.classList.remove('hidden');
-                 if (this.elements.buttons.stop) this.elements.buttons.stop.classList.add('hidden');
-                 if (this.elements.buttons.continue) this.elements.buttons.continue.classList.remove('hidden');
-
-                if (this.elements.buttons.copy) {
-                    this.elements.buttons.copy.innerHTML = ICONS.COPY;
-                    this.elements.buttons.copy.classList.remove('hidden');
+            if (isStreaming) {
+                // Streaming: Show Spinner, Show Stop, Hide Continue/Copy
+                this.elements.loadingSpinner.classList.remove('hidden');
+                
+                // Hide status text if we have content
+                if (this.elements.loadingText) {
+                    this.elements.loadingText.style.display = text ? 'none' : 'block';
                 }
-            } else {
-                // Empty text (e.g. init), hide footer
-                this.elements.footerOverlay.classList.add('hidden');
+                
+                this.elements.footerOverlay.classList.remove('hidden');
+                if (this.elements.buttons.stop) this.elements.buttons.stop.classList.remove('hidden');
+                if (this.elements.buttons.continue) this.elements.buttons.continue.classList.add('hidden');
                 if (this.elements.buttons.copy) this.elements.buttons.copy.classList.add('hidden');
+            } else {
+                // Done: Hide Spinner, Hide Stop, Show Continue/Copy
+                this.elements.loadingSpinner.classList.add('hidden');
+                
+                if (text) {
+                     this.elements.footerOverlay.classList.remove('hidden');
+                     if (this.elements.buttons.stop) this.elements.buttons.stop.classList.add('hidden');
+                     if (this.elements.buttons.continue) this.elements.buttons.continue.classList.remove('hidden');
+
+                    if (this.elements.buttons.copy) {
+                        this.elements.buttons.copy.innerHTML = ICONS.COPY;
+                        this.elements.buttons.copy.classList.remove('hidden');
+                    }
+                } else {
+                    // Empty and not streaming
+                    this.elements.footerOverlay.classList.add('hidden');
+                    if (this.elements.buttons.copy) this.elements.buttons.copy.classList.add('hidden');
+                }
             }
-            
-            // Auto scroll to top of result
-            if(this.elements.resultArea) this.elements.resultArea.scrollTop = 0;
+
+            // Apply scroll if needed
+            if (resultArea && shouldScrollBottom) {
+                resultArea.scrollTop = resultArea.scrollHeight;
+            }
         }
 
         showError(text) {

@@ -1,4 +1,5 @@
 
+
 // content_toolbar_view.js
 (function() {
     /**
@@ -31,6 +32,7 @@
                 resultArea: get('result-area'),
                 resultText: get('result-text'),
                 loadingSpinner: get('loading-spinner'),
+                loadingText: get('loading-text'),
                 footerOverlay: get('footer-overlay'),
                 
                 // Buttons
@@ -48,7 +50,7 @@
 
         // --- Delegation to Widget View ---
 
-        showToolbar(rect) { this.widgetView.showToolbar(rect); }
+        showToolbar(rect, mousePoint) { this.widgetView.showToolbar(rect, mousePoint); }
         hideToolbar() { this.widgetView.hideToolbar(); }
         showImageButton(rect) { this.widgetView.showImageButton(rect); }
         hideImageButton() { this.widgetView.hideImageButton(); }
@@ -59,10 +61,10 @@
         get isPinned() { return this.windowView.isPinned; }
         
         togglePin() { return this.windowView.togglePin(); }
-        showAskWindow(rect, contextText, resetDrag) { this.windowView.show(rect, contextText, resetDrag); }
+        showAskWindow(rect, contextText, title, resetDrag) { this.windowView.show(rect, contextText, title, resetDrag); }
         hideAskWindow() { this.windowView.hide(); }
         showLoading(msg) { this.windowView.showLoading(msg); }
-        showResult(text, title) { this.windowView.showResult(text, title); }
+        showResult(text, title, isStreaming) { this.windowView.showResult(text, title, isStreaming); }
         showError(text) { this.windowView.showError(text); }
         toggleCopyIcon(success) { this.windowView.toggleCopyIcon(success); }
         setInputValue(text) { this.windowView.setInputValue(text); }

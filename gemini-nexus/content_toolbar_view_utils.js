@@ -5,7 +5,7 @@
      * Shared Utility for Positioning Elements
      */
     window.GeminiViewUtils = {
-        positionElement: function(el, rect, isLargerWindow, isPinned) {
+        positionElement: function(el, rect, isLargerWindow, isPinned, mousePoint) {
             // Do not reposition if pinned and already visible
             if (isPinned && el.classList.contains('visible')) return;
 
@@ -26,7 +26,41 @@
 
             let left, top;
 
-            if (isLargerWindow) {
+            // --- Logic for Small Toolbar (Mouse Cursor Based) ---
+            if (!isLargerWindow && mousePoint) {
+                const offset = 12; // Distance from cursor
+                
+                // Default: Bottom Right of cursor
+                let relLeft = mousePoint.x + offset;
+                let relTop = mousePoint.y + offset;
+                
+                el.classList.remove('placed-top', 'placed-bottom');
+                
+                // Boundary Check: Right Edge
+                if (relLeft + width > vw) {
+                    // Flip to Left of cursor
+                    relLeft = mousePoint.x - width - offset;
+                }
+
+                // Boundary Check: Bottom Edge
+                if (relTop + height > vh) {
+                    // Flip to Top of cursor
+                    relTop = mousePoint.y - height - offset;
+                    el.classList.add('placed-top'); // Updates arrow style if applicable
+                } else {
+                    el.classList.add('placed-bottom');
+                }
+
+                // Hard Stop for Left/Top edges (prevent going off-screen top-left)
+                if (relLeft < 0) relLeft = 0;
+                if (relTop < 0) relTop = 0;
+
+                left = relLeft + scrollX;
+                top = relTop + scrollY;
+            } 
+            
+            // --- Logic for Ask Window or Fallback (Rect Based) ---
+            else if (isLargerWindow) {
                 // --- Ask Window (Fixed Positioning) ---
                 // We use viewport coordinates directly (no scroll offsets)
                 
@@ -70,31 +104,29 @@
                 top = relTop;
 
             } else {
-                // --- Quick Toolbar (Absolute Positioning) ---
-                // We add scroll offsets so it moves with the text
+                // --- Fallback for Toolbar if no mousePoint provided (original logic) ---
+                // Vertical: Default to Bottom
+                let relTop = rect.bottom + 12;
+                let positionClass = 'placed-bottom';
+
+                if (relTop + height > vh) {
+                    relTop = rect.top - height - 12;
+                    positionClass = 'placed-top';
+                }
                 
-                // Horizontal: Center relative to selection
-                let relLeft = rect.left + (rect.width / 2);
+                top = relTop + scrollY;
                 
-                // Account for CSS transform: translateX(-50%)
+                el.classList.remove('placed-top', 'placed-bottom');
+                el.classList.add(positionClass);
+
+                // Horizontal: Align with Right Edge
+                let relLeft = rect.right;
                 const halfW = width / 2;
                 const maxCenter = vw - halfW - 10;
                 const minCenter = halfW + 10;
                 
                 relLeft = Math.min(Math.max(relLeft, minCenter), maxCenter);
-                
                 left = relLeft + scrollX;
-
-                // Vertical: Above -> Below
-                // Default Above
-                let relTop = rect.top - height - 10; 
-                
-                // If not enough space above, go below
-                if (rect.top < height + 20) {
-                    relTop = rect.bottom + 15;
-                }
-                
-                top = relTop + scrollY;
             }
 
             el.style.left = `${left}px`;
