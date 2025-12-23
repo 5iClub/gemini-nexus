@@ -19,7 +19,7 @@ export class UIController {
         this.settings = new SettingsController({
             onOpen: () => this.sidebar.close(),
             onSettingsChanged: (connectionSettings) => {
-                this.updateModelList(connectionSettings.useOfficialApi);
+                this.updateModelList(connectionSettings);
             }
         });
         
@@ -51,18 +51,28 @@ export class UIController {
 
     // --- Dynamic Model List ---
 
-    updateModelList(useOfficialApi) {
+    updateModelList(settings) {
         if (!this.modelSelect) return;
         
         const current = this.modelSelect.value;
         this.modelSelect.innerHTML = '';
         
+        // Determine provider. Fallback to 'web' if not set.
+        // Legacy support: if provider missing but useOfficialApi is true, assume 'official'.
+        const provider = settings.provider || (settings.useOfficialApi ? 'official' : 'web');
+        
         let opts = [];
-        if (useOfficialApi) {
+        if (provider === 'official') {
             // Official API Models
             opts = [
                 { val: 'gemini-3-flash-preview', txt: 'Gemini 3 Flash' },
                 { val: 'gemini-3-pro-preview', txt: 'Gemini 3 Pro' }
+            ];
+        } else if (provider === 'openai') {
+            // OpenAI Compatible: Use single model ID from settings
+            const modelName = settings.openaiModel || "Custom Model";
+            opts = [
+                { val: 'openai_custom', txt: modelName }
             ];
         } else {
             // Web Client Models

@@ -90,13 +90,25 @@ export class MessageBridge {
             return;
         }
         if (action === 'GET_CONNECTION_SETTINGS') {
-            chrome.storage.local.get(['geminiUseOfficialApi', 'geminiApiKey', 'geminiThinkingLevel'], (res) => {
+            chrome.storage.local.get([
+                'geminiProvider',
+                'geminiUseOfficialApi', 
+                'geminiApiKey', 
+                'geminiThinkingLevel',
+                'geminiOpenaiBaseUrl',
+                'geminiOpenaiApiKey',
+                'geminiOpenaiModel'
+            ], (res) => {
                 this.frame.postMessage({ 
                     action: 'RESTORE_CONNECTION_SETTINGS', 
                     payload: { 
+                        provider: res.geminiProvider || (res.geminiUseOfficialApi ? 'official' : 'web'),
                         useOfficialApi: res.geminiUseOfficialApi === true, 
                         apiKey: res.geminiApiKey || "",
-                        thinkingLevel: res.geminiThinkingLevel || "low"
+                        thinkingLevel: res.geminiThinkingLevel || "low",
+                        openaiBaseUrl: res.geminiOpenaiBaseUrl || "",
+                        openaiApiKey: res.geminiOpenaiApiKey || "",
+                        openaiModel: res.geminiOpenaiModel || ""
                     } 
                 });
             });
@@ -114,9 +126,15 @@ export class MessageBridge {
         if (action === 'SAVE_SIDEBAR_BEHAVIOR') this.state.save('geminiSidebarBehavior', payload);
         if (action === 'SAVE_ACCOUNT_INDICES') this.state.save('geminiAccountIndices', payload);
         if (action === 'SAVE_CONNECTION_SETTINGS') {
-            this.state.save('geminiUseOfficialApi', payload.useOfficialApi);
+            this.state.save('geminiProvider', payload.provider);
+            // Official
+            this.state.save('geminiUseOfficialApi', payload.provider === 'official'); // Maintain legacy bool for now
             this.state.save('geminiApiKey', payload.apiKey);
             this.state.save('geminiThinkingLevel', payload.thinkingLevel);
+            // OpenAI
+            this.state.save('geminiOpenaiBaseUrl', payload.openaiBaseUrl);
+            this.state.save('geminiOpenaiApiKey', payload.openaiApiKey);
+            this.state.save('geminiOpenaiModel', payload.openaiModel);
         }
     }
 

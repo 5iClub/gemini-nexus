@@ -20,10 +20,20 @@ export class SettingsView {
             themeSelect: get('theme-select'),
             languageSelect: get('language-select'),
             
-            useOfficialApiToggle: get('use-official-api-toggle'),
-            apiKeyInput: get('api-key-input'),
+            // Connection
+            providerSelect: get('provider-select'),
             apiKeyContainer: get('api-key-container'),
+            
+            // Official Fields
+            officialFields: get('official-fields'),
+            apiKeyInput: get('api-key-input'),
             thinkingLevelSelect: get('thinking-level-select'),
+            
+            // OpenAI Fields
+            openaiFields: get('openai-fields'),
+            openaiBaseUrl: get('openai-base-url'),
+            openaiApiKey: get('openai-api-key'),
+            openaiModel: get('openai-model'),
             
             textSelectionToggle: get('text-selection-toggle'),
             imageToolsToggle: get('image-tools-toggle'),
@@ -46,7 +56,7 @@ export class SettingsView {
     bindEvents() {
         const { modal, btnClose, btnSave, btnReset, themeSelect, languageSelect, 
                 inputQuickAsk, inputOpenPanel, textSelectionToggle, imageToolsToggle, 
-                accountIndicesInput, sidebarRadios, btnDownloadLogs, useOfficialApiToggle, apiKeyContainer } = this.elements;
+                sidebarRadios, btnDownloadLogs, providerSelect } = this.elements;
 
         // Modal actions
         if (btnClose) btnClose.addEventListener('click', () => this.close());
@@ -72,10 +82,10 @@ export class SettingsView {
             languageSelect.addEventListener('change', (e) => this.fire('onLanguageChange', e.target.value));
         }
         
-        // Toggles
-        if (useOfficialApiToggle) {
-            useOfficialApiToggle.addEventListener('change', (e) => {
-                if (apiKeyContainer) apiKeyContainer.style.display = e.target.checked ? 'flex' : 'none';
+        // Provider Logic
+        if (providerSelect) {
+            providerSelect.addEventListener('change', (e) => {
+                this.updateConnectionVisibility(e.target.value);
             });
         }
 
@@ -111,9 +121,31 @@ export class SettingsView {
             }
         });
     }
+    
+    updateConnectionVisibility(provider) {
+        const { apiKeyContainer, officialFields, openaiFields } = this.elements;
+        if (!apiKeyContainer) return;
+
+        if (provider === 'web') {
+            apiKeyContainer.style.display = 'none';
+        } else {
+            apiKeyContainer.style.display = 'flex';
+            if (provider === 'official') {
+                if (officialFields) officialFields.style.display = 'flex';
+                if (openaiFields) openaiFields.style.display = 'none';
+            } else if (provider === 'openai') {
+                if (officialFields) officialFields.style.display = 'none';
+                if (openaiFields) openaiFields.style.display = 'flex';
+            }
+        }
+    }
 
     handleSave() {
-        const { inputQuickAsk, inputOpenPanel, textSelectionToggle, imageToolsToggle, accountIndicesInput, useOfficialApiToggle, apiKeyInput, thinkingLevelSelect } = this.elements;
+        const { 
+            inputQuickAsk, inputOpenPanel, textSelectionToggle, imageToolsToggle, accountIndicesInput, 
+            providerSelect, apiKeyInput, thinkingLevelSelect, 
+            openaiBaseUrl, openaiApiKey, openaiModel
+        } = this.elements;
         
         const data = {
             shortcuts: {
@@ -121,9 +153,14 @@ export class SettingsView {
                 openPanel: inputOpenPanel ? inputOpenPanel.value : null,
             },
             connection: {
-                useOfficialApi: useOfficialApiToggle ? useOfficialApiToggle.checked : false,
+                provider: providerSelect ? providerSelect.value : 'web',
+                // Official
                 apiKey: apiKeyInput ? apiKeyInput.value.trim() : "",
-                thinkingLevel: thinkingLevelSelect ? thinkingLevelSelect.value : "high"
+                thinkingLevel: thinkingLevelSelect ? thinkingLevelSelect.value : "low",
+                // OpenAI
+                openaiBaseUrl: openaiBaseUrl ? openaiBaseUrl.value.trim() : "",
+                openaiApiKey: openaiApiKey ? openaiApiKey.value.trim() : "",
+                openaiModel: openaiModel ? openaiModel.value.trim() : ""
             },
             textSelection: textSelectionToggle ? textSelectionToggle.checked : true,
             imageTools: imageToolsToggle ? imageToolsToggle.checked : true,
@@ -192,19 +229,25 @@ export class SettingsView {
         if (this.elements.imageToolsToggle) this.elements.imageToolsToggle.checked = imageTools;
     }
     
-    setConnectionSettings(useOfficialApi, apiKey, thinkingLevel) {
-        if (this.elements.useOfficialApiToggle) {
-            this.elements.useOfficialApiToggle.checked = useOfficialApi;
-            if (this.elements.apiKeyContainer) {
-                this.elements.apiKeyContainer.style.display = useOfficialApi ? 'flex' : 'none';
-            }
+    setConnectionSettings(data) {
+        // Provider
+        if (this.elements.providerSelect) {
+            this.elements.providerSelect.value = data.provider || 'web';
+            this.updateConnectionVisibility(data.provider || 'web');
         }
+        
+        // Official
         if (this.elements.apiKeyInput) {
-            this.elements.apiKeyInput.value = apiKey || "";
+            this.elements.apiKeyInput.value = data.apiKey || "";
         }
         if (this.elements.thinkingLevelSelect) {
-            this.elements.thinkingLevelSelect.value = thinkingLevel || "high";
+            this.elements.thinkingLevelSelect.value = data.thinkingLevel || "low";
         }
+        
+        // OpenAI
+        if (this.elements.openaiBaseUrl) this.elements.openaiBaseUrl.value = data.openaiBaseUrl || "";
+        if (this.elements.openaiApiKey) this.elements.openaiApiKey.value = data.openaiApiKey || "";
+        if (this.elements.openaiModel) this.elements.openaiModel.value = data.openaiModel || "";
     }
 
     setSidebarBehavior(behavior) {

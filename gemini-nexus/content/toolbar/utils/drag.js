@@ -12,6 +12,7 @@
             this.callbacks = callbacks; // { onSnap(side, top), onUndock() }
             
             this.isDragging = false;
+            this.isFixed = false; // Cache position type during drag
             this.dragOffset = { x: 0, y: 0 };
 
             // Bind methods for event listeners
@@ -52,6 +53,12 @@
             }
 
             this.isDragging = true;
+            
+            // Detect position strategy (fixed vs absolute)
+            // The Ask Window is 'fixed', the Floating Toolbar is 'absolute'
+            const style = window.getComputedStyle(this.target);
+            this.isFixed = style.position === 'fixed';
+
             const rect = this.target.getBoundingClientRect();
             
             // Calculate offset within the element
@@ -59,9 +66,23 @@
             this.dragOffset.y = clientY - rect.top;
 
             this.target.classList.add('dragging');
-            // Ensure style is set for initial move (resetting any dock styles)
-            this.target.style.left = `${rect.left}px`;
-            this.target.style.top = `${rect.top}px`;
+            
+            // Calculate initial position coordinates
+            let initialLeft = rect.left;
+            let initialTop = rect.top;
+
+            // If absolute (not fixed), we must include scroll offsets because 
+            // the element's coordinate system is the document, not the viewport.
+            if (!this.isFixed) {
+                const scrollX = window.scrollX || window.pageXOffset;
+                const scrollY = window.scrollY || window.pageYOffset;
+                initialLeft += scrollX;
+                initialTop += scrollY;
+            }
+
+            // Ensure style is set for initial move (resetting any dock styles or transforms)
+            this.target.style.left = `${initialLeft}px`;
+            this.target.style.top = `${initialTop}px`;
             this.target.style.transform = 'none';
             this.target.style.right = 'auto'; // Reset right if previously docked right
 
@@ -87,8 +108,16 @@
                  clientY = e.clientY;
             }
 
-            const newLeft = clientX - this.dragOffset.x;
-            const newTop = clientY - this.dragOffset.y;
+            let newLeft = clientX - this.dragOffset.x;
+            let newTop = clientY - this.dragOffset.y;
+
+            // Add scroll offset for absolute elements (Floating Toolbar)
+            if (!this.isFixed) {
+                const scrollX = window.scrollX || window.pageXOffset;
+                const scrollY = window.scrollY || window.pageYOffset;
+                newLeft += scrollX;
+                newTop += scrollY;
+            }
 
             this.target.style.left = `${newLeft}px`;
             this.target.style.top = `${newTop}px`;

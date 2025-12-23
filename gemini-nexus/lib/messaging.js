@@ -88,9 +88,9 @@ export function requestConnectionSettingsFromStorage() {
     window.parent.postMessage({ action: 'GET_CONNECTION_SETTINGS' }, '*');
 }
 
-export function saveConnectionSettingsToStorage(useOfficialApi, apiKey, thinkingLevel) {
+export function saveConnectionSettingsToStorage(data) {
     window.parent.postMessage({
         action: 'SAVE_CONNECTION_SETTINGS',
-        payload: { useOfficialApi, apiKey, thinkingLevel }
+        payload: data
     }, '*');
 }

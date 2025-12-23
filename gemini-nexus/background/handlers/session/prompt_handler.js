@@ -13,9 +13,16 @@ export class PromptHandler {
         this.controlManager = controlManager;
         this.builder = new PromptBuilder(controlManager);
         this.toolExecutor = new ToolExecutor(controlManager);
+        this.isCancelled = false;
+    }
+
+    cancel() {
+        this.isCancelled = true;
     }
 
     handle(request, sendResponse) {
+        this.isCancelled = false;
+
         (async () => {
             const onUpdate = (partialText, partialThoughts) => {
                 // Catch errors if receiver (UI) is closed/unavailable
@@ -67,6 +74,7 @@ export class PromptHandler {
 
                 // --- AUTOMATED FEEDBACK LOOP ---
                 while (keepLooping && loopCount < MAX_LOOPS) {
+                    if (this.isCancelled) break;
                     
                     // 2. Send to Gemini
                     const result = await this.sessionManager.handleSendPrompt({
@@ -75,6 +83,8 @@ export class PromptHandler {
                         systemInstruction: systemInstruction, // Pass system instruction
                         files: currentFiles
                     }, onUpdate);
+
+                    if (this.isCancelled) break;
 
                     if (!result || result.status !== 'success') {
                         // If error, notify UI and break loop
@@ -95,6 +105,8 @@ export class PromptHandler {
                     if (request.enableBrowserControl) {
                         toolResult = await this.toolExecutor.executeIfPresent(result.text, onUpdate);
                     }
+
+                    if (this.isCancelled) break;
 
                     // 5. Decide Next Step
                     if (toolResult) {
@@ -160,6 +172,8 @@ export class PromptHandler {
                         // This prevents "No valid response" errors caused by rapid-fire requests.
                         await delay(2000 + Math.random() * 2000);
                         
+                        if (this.isCancelled) break;
+
                     } else {
                         // No tool execution, final answer reached
                         keepLooping = false;

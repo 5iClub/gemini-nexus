@@ -23,7 +23,11 @@ export class StateManager {
             'geminiAccountIndices',
             'geminiApiKey',
             'geminiUseOfficialApi',
-            'geminiThinkingLevel'
+            'geminiThinkingLevel',
+            'geminiProvider',
+            'geminiOpenaiBaseUrl',
+            'geminiOpenaiApiKey',
+            'geminiOpenaiModel'
         ], (result) => {
             this.data = result;
             this.trySendInitData();
@@ -62,9 +66,13 @@ export class StateManager {
         this.frame.postMessage({ 
             action: 'RESTORE_CONNECTION_SETTINGS', 
             payload: { 
-                useOfficialApi: this.data.geminiUseOfficialApi === true, 
+                provider: this.data.geminiProvider || (this.data.geminiUseOfficialApi ? 'official' : 'web'),
+                useOfficialApi: this.data.geminiUseOfficialApi === true, // Legacy
                 apiKey: this.data.geminiApiKey || "",
-                thinkingLevel: this.data.geminiThinkingLevel || "low"
+                thinkingLevel: this.data.geminiThinkingLevel || "low",
+                openaiBaseUrl: this.data.geminiOpenaiBaseUrl || "",
+                openaiApiKey: this.data.geminiOpenaiApiKey || "",
+                openaiModel: this.data.geminiOpenaiModel || ""
             } 
         });
 

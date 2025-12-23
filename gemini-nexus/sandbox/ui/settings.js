@@ -16,9 +16,17 @@ export class SettingsController {
         this.textSelectionEnabled = true;
         this.imageToolsEnabled = true;
         this.accountIndices = "0";
-        this.useOfficialApi = false;
-        this.apiKey = "";
-        this.thinkingLevel = "low";
+        
+        // Connection State
+        this.connectionData = {
+            provider: 'web',
+            useOfficialApi: false, // Legacy support
+            apiKey: "",
+            thinkingLevel: "low",
+            openaiBaseUrl: "",
+            openaiApiKey: "",
+            openaiModel: ""
+        };
 
         // Initialize View
         this.view = new SettingsView({
@@ -66,7 +74,7 @@ export class SettingsController {
         this.view.setLanguageValue(getLanguagePreference());
         this.view.setToggles(this.textSelectionEnabled, this.imageToolsEnabled);
         this.view.setAccountIndices(this.accountIndices);
-        this.view.setConnectionSettings(this.useOfficialApi, this.apiKey, this.thinkingLevel);
+        this.view.setConnectionSettings(this.connectionData);
         
         // Refresh from storage
         requestTextSelectionFromStorage();
@@ -97,14 +105,20 @@ export class SettingsController {
         saveAccountIndicesToStorage(cleaned);
         
         // Connection
-        this.useOfficialApi = data.connection.useOfficialApi;
-        this.apiKey = data.connection.apiKey;
-        this.thinkingLevel = data.connection.thinkingLevel || "low";
-        saveConnectionSettingsToStorage(this.useOfficialApi, this.apiKey, this.thinkingLevel);
+        this.connectionData = {
+            provider: data.connection.provider,
+            apiKey: data.connection.apiKey,
+            thinkingLevel: data.connection.thinkingLevel,
+            openaiBaseUrl: data.connection.openaiBaseUrl,
+            openaiApiKey: data.connection.openaiApiKey,
+            openaiModel: data.connection.openaiModel
+        };
+        
+        saveConnectionSettingsToStorage(this.connectionData);
 
         // Notify app of critical setting changes
         if (this.callbacks.onSettingsChanged) {
-            this.callbacks.onSettingsChanged(data.connection);
+            this.callbacks.onSettingsChanged(this.connectionData);
         }
     }
 
@@ -180,10 +194,15 @@ export class SettingsController {
     }
     
     updateConnectionSettings(settings) {
-        this.useOfficialApi = settings.useOfficialApi;
-        this.apiKey = settings.apiKey;
-        this.thinkingLevel = settings.thinkingLevel || "low";
-        this.view.setConnectionSettings(this.useOfficialApi, this.apiKey, this.thinkingLevel);
+        this.connectionData = { ...this.connectionData, ...settings };
+        
+        // Legacy compat: If provider missing but useOfficialApi is true, set to official
+        if (!this.connectionData.provider) {
+            if (settings.useOfficialApi) this.connectionData.provider = 'official';
+            else this.connectionData.provider = 'web';
+        }
+        
+        this.view.setConnectionSettings(this.connectionData);
     }
     
     updateSidebarBehavior(behavior) {

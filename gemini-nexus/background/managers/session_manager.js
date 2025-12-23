@@ -2,6 +2,7 @@
 // background/managers/session_manager.js
 import { sendOfficialMessage } from '../../services/providers/official.js';
 import { sendWebMessage } from '../../services/providers/web.js';
+import { sendOpenAIMessage } from '../../services/providers/openai_compatible.js';
 import { AuthManager } from './auth_manager.js';
 
 export class GeminiSessionManager {
@@ -15,11 +16,59 @@ export class GeminiSessionManager {
     }
 
     async _getConnectionSettings() {
-        const stored = await chrome.storage.local.get(['geminiUseOfficialApi', 'geminiApiKey', 'geminiThinkingLevel']);
+        const stored = await chrome.storage.local.get([
+            'geminiProvider',
+            'geminiUseOfficialApi', 
+            'geminiApiKey', 
+            'geminiThinkingLevel', 
+            'geminiApiKeyPointer',
+            'geminiOpenaiBaseUrl',
+            'geminiOpenaiApiKey',
+            'geminiOpenaiModel'
+        ]);
+
+        // Legacy Migration Logic
+        let provider = stored.geminiProvider;
+        if (!provider) {
+            provider = stored.geminiUseOfficialApi === true ? 'official' : 'web';
+        }
+
+        let activeApiKey = stored.geminiApiKey || "";
+
+        // Handle API Key Rotation (Comma separated) for Official Gemini
+        if (provider === 'official' && activeApiKey.includes(',')) {
+            const keys = activeApiKey.split(',').map(k => k.trim()).filter(k => k);
+            
+            if (keys.length > 0) {
+                let pointer = stored.geminiApiKeyPointer || 0;
+                
+                // Reset pointer if out of bounds (e.g. keys removed)
+                if (typeof pointer !== 'number' || pointer >= keys.length || pointer < 0) {
+                    pointer = 0;
+                }
+                
+                activeApiKey = keys[pointer];
+                
+                // Advance pointer for next call
+                const nextPointer = (pointer + 1) % keys.length;
+                await chrome.storage.local.set({ geminiApiKeyPointer: nextPointer });
+                
+                console.log(`[Gemini Nexus] Rotating Official API Key (Index: ${pointer})`);
+            }
+        } else {
+            // Trim single key just in case
+            activeApiKey = activeApiKey.trim();
+        }
+
         return {
-            useOfficialApi: stored.geminiUseOfficialApi === true,
-            apiKey: stored.geminiApiKey,
-            thinkingLevel: stored.geminiThinkingLevel || "low"
+            provider: provider,
+            // Official
+            apiKey: activeApiKey,
+            thinkingLevel: stored.geminiThinkingLevel || "low",
+            // OpenAI
+            openaiBaseUrl: stored.geminiOpenaiBaseUrl,
+            openaiApiKey: stored.geminiOpenaiApiKey,
+            openaiModel: stored.geminiOpenaiModel
         };
     }
 
@@ -45,8 +94,10 @@ export class GeminiSessionManager {
                 }];
             }
 
-            if (settings.useOfficialApi) {
+            if (settings.provider === 'official') {
                 return await this._handleOfficialRequest(request, settings, files, onUpdate, signal);
+            } else if (settings.provider === 'openai') {
+                return await this._handleOpenAIRequest(request, settings, files, onUpdate, signal);
             } else {
                 return await this._handleWebRequest(request, files, onUpdate, signal);
             }
@@ -88,15 +139,8 @@ export class GeminiSessionManager {
     async _handleOfficialRequest(request, settings, files, onUpdate, signal) {
         if (!settings.apiKey) throw new Error("API Key is missing. Please check settings.");
         
-        // Fetch History if session exists (to provide context)
-        let history = [];
-        if (request.sessionId) {
-            const { geminiSessions } = await chrome.storage.local.get(['geminiSessions']);
-            const session = geminiSessions ? geminiSessions.find(s => s.id === request.sessionId) : null;
-            if (session && session.messages) {
-                history = session.messages;
-            }
-        }
+        // Fetch History
+        let history = await this._getHistory(request.sessionId);
 
         const response = await sendOfficialMessage(
             request.text, 
@@ -119,6 +163,46 @@ export class GeminiSessionManager {
             context: null, // Official API is stateless
             thoughtSignature: response.thoughtSignature
         };
+    }
+
+    // --- OpenAI Compatible Flow ---
+    async _handleOpenAIRequest(request, settings, files, onUpdate, signal) {
+        const config = {
+            baseUrl: settings.openaiBaseUrl,
+            apiKey: settings.openaiApiKey,
+            model: settings.openaiModel
+        };
+
+        let history = await this._getHistory(request.sessionId);
+
+        const response = await sendOpenAIMessage(
+            request.text,
+            request.systemInstruction,
+            history,
+            config,
+            files,
+            signal,
+            onUpdate
+        );
+
+        return {
+            action: "GEMINI_REPLY",
+            text: response.text,
+            thoughts: response.thoughts,
+            images: response.images,
+            status: "success",
+            context: null
+        };
+    }
+
+    async _getHistory(sessionId) {
+        if (!sessionId) return [];
+        const { geminiSessions } = await chrome.storage.local.get(['geminiSessions']);
+        const session = geminiSessions ? geminiSessions.find(s => s.id === sessionId) : null;
+        if (session && session.messages) {
+            return session.messages;
+        }
+        return [];
     }
 
     // --- Reverse Engineered Web Client Flow ---
